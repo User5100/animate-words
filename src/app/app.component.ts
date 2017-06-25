@@ -1,4 +1,5 @@
-import { Component, Renderer2 } from '@angular/core';
+import { Component, Renderer2,
+         ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import {
   trigger,
   state,
@@ -24,35 +25,55 @@ import { DataService } from './data.service';
     ]),
     trigger('expandContent', [
       state('show', style({
-        maxHeight: '580px'
+        maxHeight: '600px'
       })),
       state('hide', style({
-        maxHeight: '640px'
+        maxHeight: '660px'
       })),
       transition('show <=> hide', animate('100ms ease-in'))
     ])
   ],
   template: `
- 
   <div class="container">
     <nav>Header</nav>
-    
+
     <section
       [@expandContent]="state">
-      Section
+
+
+
+      <div
+        class="words-container"
+        [ngStyle]="{'margin-left': setwordsContainerMarginLeft}"
+        #wordsContainer>
+
+            <p
+              *ngFor="let wordObj of data$ | async"
+              class="word"
+              [ngClass]="{ 'highlight-word' : currentTime > wordObj.timestamp && currentTime < (wordObj.timestamp + wordObj.length) }">
+              {{wordObj.word}} </p>
+
+      </div>
+
       <app-amplitude></app-amplitude>
-      <pre>{{ data$ | async | json }}</pre>
+
+      <audio
+        #audio
+        controls
+        src="http://k003.kiwi6.com/hotlink/5p87y9ftzg/LOCAL_FEED_JULY_8kHz.wav">
+      </audio>
+
     </section>
     <aside
       [@expandContent]="state">
       Aside
     </aside>
-  
+
     <footer
       class="player"
       [@hideFooter]="state">
       Player
-    </footer>  
+    </footer>
   </div>
   `,
   styles: [`
@@ -68,7 +89,7 @@ import { DataService } from './data.service';
     position: relative;
     height: 100vh;
     overflow: hidden;
-   
+
   }
 
   .container > * {
@@ -105,21 +126,85 @@ import { DataService } from './data.service';
       grid-template-columns:
         1fr 2fr 2fr;
       grid-template-rows:
-        60px 8fr 50px;
-      grid-gap: 4px;
+        60px 22fr 60px;
+      grid-gap: 1px;
       height: 100vh;
     }
   }
+
+  .words-container {
+    white-space: nowrap;
+    display: inline;
+    padding: 10px;
+    height: 10px;
+    max-height: 10px;
+  }
+
+  .word {
+    font-size: 16px;
+    transition: font-size .1s;
+    display: inline-block;
+    margin: 50px;
+
+  }
+
+  .highlight-word {
+    font-size: 32px;
+  }
   `]
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
+
   state: string = 'show';
   data$: Observable<any>;
+  setwordsContainerMarginLeft: string;
+  currentTime: number;
+  @ViewChild('wordsContainer') wordsContainer: ElementRef;
+  @ViewChild('audio') audio: ElementRef;
 
   constructor(private renderer: Renderer2,
               private dataService: DataService) {}
 
   ngOnInit() {
+
+    this.handlePlayerHideOrDisplay();
+
+    this.data$ = this.dataService.getData();
+
+    this.handleScrollingWordsOnPlay();
+  }
+
+  ngAfterViewInit() {
+
+  }
+
+  animateFooter() {
+    this.state = (this.state === 'show' ? 'hide' : 'show');
+  }
+
+  getWordsContainerWidth() {
+    let { width } = this.wordsContainer.nativeElement.getBoundingClientRect();
+    return width;
+  }
+
+  getAudioDuration(): number {
+    return this.audio.nativeElement.duration;
+  }
+
+  handleScrollingWordsOnPlay() {
+
+    this.renderer.listen(this.audio.nativeElement, 'timeupdate', () => {
+      this.currentTime = this.audio.nativeElement.currentTime;
+      let width = this.getWordsContainerWidth();
+      let duration = this.getAudioDuration();
+
+      //setwordsContainerMarginLeft
+      this.setwordsContainerMarginLeft = `${-(this.currentTime /duration * width).toFixed(0)}px`;
+
+    })
+  }
+
+  handlePlayerHideOrDisplay() {
     this.renderer.listen(document, 'mousemove', (mousemove) => {
 
       if(mousemove.clientY > 600 && this.state === 'hide') {
@@ -128,13 +213,7 @@ export class AppComponent {
 
       if(mousemove.clientY < 600 && this.state === 'show') {
         this.animateFooter()
-      }   
-    })
-
-    this.data$ = this.dataService.getData();
-  }
-
-  animateFooter() {
-    this.state = (this.state === 'show' ? 'hide' : 'show');
+      }
+    });
   }
 }

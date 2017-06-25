@@ -1,24 +1,22 @@
-import { Component, OnInit, ViewChild, ElementRef, OnChanges } from '@angular/core';
+import { Component, OnInit, OnChanges } from '@angular/core';
 import * as d3 from 'd3';
 
 @Component({
   selector: 'app-amplitude',
   template: `
   <h2>Audio Visualisation</h2>
-  <audio
-    #audio 
-    src="http://k003.kiwi6.com/hotlink/5p87y9ftzg/LOCAL_FEED_JULY_8kHz.wav"></audio>
+
   <svg></svg>
   `,
   styles: [`
-  
+
   `]
 })
 export class AmplitudeComponent implements OnInit, OnChanges {
 
   margin = { top: 20, right: 20, bottom: 20, left: 30 }
-  height = 400 - this.margin.top - this.margin.bottom;
-  width = 400 - this.margin.right - this.margin.left;
+  height = 200 - this.margin.top - this.margin.bottom;
+  width = 200 - this.margin.right - this.margin.left;
   svg: any;
   xAxis: any;
   yAxis: any;
@@ -56,7 +54,7 @@ export class AmplitudeComponent implements OnInit, OnChanges {
     this.xAxis = d3.selectAll('svg').append('g')
                     .attr('transform', `translate(${this.margin.left}, ${this.height + this.margin.top})`)
                     .call(d3.axisBottom(this.xScale));
-                
+
     this.update = this.svg.selectAll('rect')
                           .data(this.data);
 
@@ -69,14 +67,14 @@ export class AmplitudeComponent implements OnInit, OnChanges {
                               .attr('fill', 'lightblue')
                               .attr('stroke', 'black');
 
-    //Enter + Update                          
+    //Enter + Update
     this.enter.merge(this.update)
               .attr('height', d => this.height - this.yScale(d))
               .attr('width', this.rectWidth)
               .attr('x', (d, i) => this.xScale(i))
               .attr('y', d => this.yScale(d));
 
-    
+
 
   }
 
@@ -88,9 +86,9 @@ export class AmplitudeComponent implements OnInit, OnChanges {
               .attr('x', (d, i) => this.xScale(i))
               .attr('y', d => this.yScale(d));
 
-    
-    
-    
+
+
+
   }
 
 }
